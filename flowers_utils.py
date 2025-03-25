@@ -113,7 +113,7 @@ CLASSES = [
 ]
         
 
-def load_splits(data_dir: str = "./data", verbose: bool = True) -> Subset:
+def load_splits(transform: transforms.Compose = None, data_dir: str = "./data", verbose: bool = True) -> Subset:
     """Load the base and novel splits of the Flowers102 dataset.
     Args:
         data_dir (str): Directory where the dataset will be stored.
@@ -121,35 +121,32 @@ def load_splits(data_dir: str = "./data", verbose: bool = True) -> Subset:
     Returns:
         tuple: A tuple containing the training, validation, and base + novel test sets.
     """
+    if verbose: print("\n⏳ Loading Flowers102 splits...\n", flush=True)
     start_time = time.time()
 
-    transform = transforms.Compose([
-        transforms.Resize((224, 224)),
-        transforms.ToTensor()
-    ])
     train = Flowers102(root=data_dir, split="train", download=True, transform=transform)
     valid = Flowers102(root=data_dir, split="val", download=True, transform=transform)
     test = Flowers102(root=data_dir, split="test", download=True, transform=transform)
 
     train_split = _split_data(train, ["base"])
-    if verbose: print("Train base set loaded!", flush=True)
+    if verbose: print("✔️  Train base set loaded!", flush=True)
     valid_split = _split_data(valid, ["base"])
-    if verbose: print("Valid base set loaded!", flush=True)
-    test_split = _split_data(test, ["base", "novel"])
-    if verbose: print("Test base and novel set loaded!", flush=True)
+    if verbose: print("✔️  Valid base set loaded!", flush=True)
+    test_split = _split_data(test, ["base", "novel"], test=True)
+    if verbose: print("✔️  Test base and novel set loaded!", flush=True)
 
     end_time = time.time()
-    if verbose: print(f"Data loaded in {end_time - start_time:.2f} seconds.", flush=True)
+    if verbose: print(f"\n🚀 Data loaded in {end_time - start_time:.2f} seconds. Faster than Saetta McQeen!", flush=True)
 
     return train_split["base"], valid_split["base"], test_split["base"], test_split["novel"]
 
 
-def _split_data(dataset, splits=["base", "novel"], K=10):
+def _split_data(dataset, splits=["base", "novel"], test=False, K=10):
 
     dataset.class_to_idx = {CLASSES[idx]: idx for idx in dataset._labels}
 
     # Sort classes by name, standard in Few-Shot Learning
-    sorted_classes = sorted(dataset.class_to_idx.items(), key=lambda x: x[0])
+    sorted_classes = sorted(dataset.class_to_idx.items(), key=lambda x: x[1])
 
     # Get ordered labels_idx
     sorted_labels_idx = [dataset.class_to_idx[class_name] for class_name, _ in sorted_classes]
@@ -182,7 +179,10 @@ def _split_data(dataset, splits=["base", "novel"], K=10):
         selected_indices_base = []
         for class_idx in first_half_classes:
             class_samples = first_class2samples[class_idx]
-            selected_samples = random.sample(class_samples, K)
+            if test:
+                selected_samples = class_samples
+            else: 
+                selected_samples = random.sample(class_samples, K)
             selected_indices_base.extend(selected_samples)
 
         base_set = Subset(dataset, selected_indices_base)
@@ -204,7 +204,10 @@ def _split_data(dataset, splits=["base", "novel"], K=10):
         selected_indices_novel = []
         for class_idx in second_half_classes:
             class_samples = second_class2samples[class_idx]
-            selected_samples = random.sample(class_samples, K)
+            if test:
+                selected_samples = class_samples
+            else:   
+                selected_samples = random.sample(class_samples, K)
             selected_indices_novel.extend(selected_samples)
 
         novel_set = Subset(dataset, selected_indices_novel)
