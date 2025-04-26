@@ -82,7 +82,12 @@ Simone Caldarella
 
 # Usage
 if __name__ == "__main__":
-    file_path = "groups.csv"  # Update with the path to your CSV file
+    import argparse
+
+    argparser = argparse.ArgumentParser(description="Generate mailto links for AWS Instances access.")
+    argparser.add_argument("-f", "--file", type=str, help="Path to the CSV file containing group information.", required=True)
+    args = argparser.parse_args()
+    file_path = args.file
     df = pd.read_csv(file_path, header=None)
     print(df)
     mailto_links = prepare_mailto_link(df)
