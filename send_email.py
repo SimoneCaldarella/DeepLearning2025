@@ -76,6 +76,7 @@ Simone Caldarella
 
         # Create the mailto link with subject, body, and recipients
         mailto_link = f"mailto:{emails[0]}?{cc_emails}&subject={encoded_subject}&body={encoded_body}"
+        # mailto_link = f"https://mail.google.com/mail/?view=cm&fs=1&to={emails[0]}&{cc_emails}&su={encoded_subject}&body={encoded_body}&authuser=1"
         mailto_links.append(mailto_link)
 
     return mailto_links
